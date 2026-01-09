@@ -17,10 +17,8 @@ const formatTime = (ts: number | null) => {
   return `${Math.floor(diff / 3600000)}h ${Math.floor((diff % 3600000) / 60000)}m`;
 };
 
-// 거래소별 상세 카드 컴포넌트 (데이터 부재 시 에러 방지 로직 강화)
 const ExchangeDetailCard = ({ label, data, color }: { label: string, data: any, color: string }) => {
   const hasData = data && data.apr !== null && data.apr !== undefined;
-
   return (
     <div className="space-y-4 text-center">
       <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{label}</p>
@@ -28,7 +26,6 @@ const ExchangeDetailCard = ({ label, data, color }: { label: string, data: any, 
         {hasData ? `${data.apr.toFixed(2)}%` : '-'}
       </div>
       <div className="flex flex-col gap-1 items-center">
-        {/* rate가 있을 때만 toFixed 호출 */}
         <p className="text-[10px] text-slate-400 font-mono">
           Rate: {hasData && data.rate !== undefined ? `${data.rate.toFixed(4)}%` : '-'}
         </p>
@@ -44,55 +41,41 @@ export default function CoinDetail() {
   const params = useParams();
   const router = useRouter();
   const symbol = params?.symbol;
-
   const { data, isLoading } = useSWR('/api/funding', fetcher, { refreshInterval: 5000 });
 
-  if (isLoading || !data) return <div className="p-20 text-center font-mono animate-pulse">LOADING ASSET DETAILS...</div>;
+  if (isLoading || !data) return <div className="p-20 text-center font-mono">LOADING...</div>;
 
   const coin = data.data?.find((c: any) => c.symbol === symbol);
-  if (!coin) return <div className="p-20 text-center">자산을 찾을 수 없습니다.</div>;
+  if (!coin) return <div className="p-20 text-center">NOT FOUND</div>;
 
   return (
-    <div className="p-10 max-w-6xl mx-auto space-y-8">
+    <div className="p-10 max-w-6xl mx-auto space-y-8 ml-64">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => router.back()} className="gap-2 hover:bg-slate-200">
-          <ArrowLeft className="w-4 h-4" /> 뒤로 가기
-        </Button>
-        <div className="text-right">
-          <div className="flex items-center justify-end gap-2">
-            <h2 className="text-5xl font-black italic text-slate-900 tracking-tighter">{symbol}</h2>
-            <Zap className="text-blue-500 fill-blue-500 w-8 h-8" />
-          </div>
-          <Badge variant="outline" className="mt-2 font-mono">REAL-TIME ANALYSIS</Badge>
-        </div>
+        <Button variant="ghost" onClick={() => router.back()} className="gap-2"><ArrowLeft className="w-4 h-4" /> 뒤로</Button>
+        <h2 className="text-5xl font-black italic text-slate-900 tracking-tighter">{symbol}</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-blue-600 text-white border-none shadow-xl">
-          <CardHeader className="pb-2"><CardTitle className="text-xs opacity-70">MAX APR GAP</CardTitle></CardHeader>
-          <CardContent><div className="text-3xl font-black">{coin.aprGap?.toFixed(2)}%</div></CardContent>
+        <Card className="bg-blue-600 text-white border-none shadow-xl p-6">
+          <p className="text-xs opacity-70 mb-2 font-bold uppercase">Max APR Gap</p>
+          <div className="text-4xl font-black">{coin.aprGap?.toFixed(2)}%</div>
         </Card>
-        <Card className="bg-white border-slate-200 shadow-sm">
-          <CardHeader className="pb-2"><CardTitle className="text-xs text-slate-500">CURRENT BASIS</CardTitle></CardHeader>
-          <CardContent>
-            <div className={`text-3xl font-black ${coin.basis > 0 ? 'text-blue-600' : 'text-red-600'}`}>
-              {coin.basis > 0 ? '+' : ''}{coin.basis?.toFixed(3)}%
-            </div>
-          </CardContent>
+        <Card className="bg-white border-slate-200 shadow-sm p-6">
+          <p className="text-xs text-slate-500 mb-2 font-bold uppercase">Current Basis</p>
+          <div className={`text-4xl font-black ${coin.basis > 0 ? 'text-blue-600' : 'text-red-600'}`}>
+            {coin.basis > 0 ? '+' : ''}{coin.basis?.toFixed(3)}%
+          </div>
         </Card>
-        <Card className="bg-white border-slate-200 shadow-sm">
-          <CardHeader className="pb-2"><CardTitle className="text-xs text-slate-500">RECOMMENDED</CardTitle></CardHeader>
-          <CardContent>
-            <Badge className="bg-indigo-600 text-white font-bold">
-              {coin.bestPair?.short || '-'} SHORT / {coin.bestPair?.long || '-'} LONG
-            </Badge>
-          </CardContent>
+        <Card className="bg-white border-slate-200 shadow-sm p-6">
+          <p className="text-xs text-slate-500 mb-2 font-bold uppercase">Recommendation</p>
+          <Badge className="bg-indigo-600 text-white text-sm font-bold px-3 py-1">
+            {coin.bestPair?.short || '-'} SHORT / {coin.bestPair?.long || '-'} LONG
+          </Badge>
         </Card>
       </div>
 
       <Card className="bg-slate-950 text-white p-12 rounded-[2rem] shadow-2xl">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-          {/* row가 아닌 coin 변수를 참조하도록 수정 */}
           <ExchangeDetailCard label="Binance" data={coin.bn} color="text-green-400" />
           <ExchangeDetailCard label="Hyperliquid" data={coin.hl} color="text-red-400" />
           <ExchangeDetailCard label="Bybit" data={coin.bb} color="text-yellow-400" />
